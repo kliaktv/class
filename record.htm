@@ -96,7 +96,7 @@
                         </optgroup>
                         <optgroup label="🌟 正向行為表現">
                             <option value="★ 念課文 (出現一顆星)">★ 念課文 (出現一顆星)</option>
-                            <option value="★★ 念課文 (出現兩顆星)">★★ 念課文 (出現兩顆星)</option>
+                            <option value="★★ 答對問題 (出現兩顆星)">★★ 答對問題 (出現兩顆星)</option>
                             <option value="👍 態度進步">👍 態度進步</option>
 						<option value="👌 幫助同學">👌 幫助同學</option>	
                             <option value="✏️ 自訂其他正面表現">✏️ 自訂其他正面表現...</option>
@@ -115,7 +115,7 @@
 
                 <button type="submit" id="submitBtn" 
                     class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition duration-200 shadow-md">
-                    送出記錄
+                    送出紀錄
                 </button>
             </form>
 
@@ -173,7 +173,7 @@
 
         let allStudents = [];
         let currentSessionRecords = []; // 儲存當節已送出的紀錄
-        const weekDays = ["(日)", "(一)", "(二)", "(三)", "(四)", "(五)", "(六)"];
+        const weekDays = ["(週日)", "(週一)", "(週二)", "(週三)", "(週四)", "(週五)", "(週六)"];
 
         const dateInput = document.getElementById('date');
         dateInput.valueAsDate = new Date();
