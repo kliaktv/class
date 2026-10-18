@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>課堂事務與行為記錄系統</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen py-6 px-4">
+
+    <div class="max-w-xl mx-auto space-y-6">
+        
+        <!-- 主表單卡片 -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden p-6 md:p-8 relative">
+            
+            <!-- 右上角通知導師按鈕 -->
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800">🏫 課堂事務與行為記錄</h1>
+                    <p class="text-xs text-slate-500 mt-1">請選擇班級、學生與相關表現進行紀錄</p>
+                </div>
+                <button type="button" onclick="openNotifyModal()" 
+                    class="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium py-2 px-3 rounded-lg shadow transition">
+                    <span>✉️</span> 通知導師
+                </button>
+            </div>
+
+            <!-- 載入中遮罩 -->
+            <div id="loading" class="hidden flex justify-center items-center py-10">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                <span class="ml-3 text-slate-600 font-medium">連線載入學生資料中...</span>
+            </div>
+
+            <form id="recordForm" class="space-y-5">
+                
+                <!-- 日期選擇 (含星期顯示) -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-sm font-medium text-slate-700">日期</label>
+                        <span id="dayOfWeekTag" class="text-sm font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded"></span>
+                    </div>
+                    <input type="date" id="date" required onchange="updateDayOfWeek()"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <!-- 班級與學生選單 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">班級</label>
+                        <select id="classSelect" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="onClassOrPeriodChange()">
+                            <option value="">請先選擇班級</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">學生 (座號 + 姓名)</label>
+                        <select id="studentSelect" required disabled class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-100">
+                            <option value="">請先選擇班級</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 節次選擇 -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">節次</label>
+                    <select id="periodSelect" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="onClassOrPeriodChange()">
+                        <option value="">請選擇節次</option>
+                        <option value="第 1 節">第 1 節</option>
+                        <option value="第 2 節">第 2 節</option>
+                        <option value="第 3 節">第 3 節</option>
+                        <option value="第 4 節">第 4 節</option>
+                        <option value="第 5 節">第 5 節</option>
+                        <option value="第 6 節">第 6 節</option>
+                        <option value="第 7 節">第 7 節</option>
+                    </select>
+                </div>
+
+                <!-- 事件標題 / 行為選擇 -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">事件標題 / 行為紀錄</label>
+                    <select id="titleSelect" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50 text-blue-900 font-semibold" onchange="handleTitleChange()">
+                        <option value="【無登記】">【無登記】</option>
+                        <optgroup label="⚠️ 注意事項與違規">
+                            <option value="📋 遲到">📋 遲到</option>
+                            <option value="❌ 缺席">❌ 缺席</option>
+						<option value="🗣️ 上課講話">🗣️ 上課講話</option>
+                            <option value="🔊 上課吵鬧">🔊 上課吵鬧</option>	
+						<option value="🤼 打架">🤼 打架</option>	
+                            <option value="😴 上課睡整節">😴 上課睡整節</option>
+                            <option value="💤 上課睡著">💤 上課睡著</option>
+                            <option value="📝 功課未完成">📝 功課未完成</option>
+                            <option value="🚫 功課全未寫">🚫 功課全未寫</option>
+                            <option value="🎒 沒帶課本或作業">🎒 沒帶課本或作業</option>
+						<option value="📄 考卷未訂正">📄 考卷未訂正</option>                           
+                            <option value="🖍️ 自訂其他需注意狀況">🖍️ 自訂其他需注意狀況...</option>
+                        </optgroup>
+                        <optgroup label="🌟 正向行為表現">
+                            <option value="★ 念課文 (出現一顆星)">★ 念課文 (出現一顆星)</option>
+                            <option value="★★ 念課文 (出現兩顆星)">★★ 念課文 (出現兩顆星)</option>
+                            <option value="👍 態度進步">👍 態度進步</option>
+						<option value="👌 幫助同學">👌 幫助同學</option>	
+                            <option value="✏️ 自訂其他正面表現">✏️ 自訂其他正面表現...</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <!-- 自訂標題輸入框 -->
+                <div id="customTitleContainer" class="hidden">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">自訂行為說明</label>
+                    <input type="text" id="customTitle" placeholder="請輸入自訂事件內容..." 
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <input type="hidden" id="isPositive" value="false">
+
+                <button type="submit" id="submitBtn" 
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition duration-200 shadow-md">
+                    送出記錄
+                </button>
+            </form>
+
+            <div id="toast" class="hidden mt-4 p-3 rounded-lg text-sm text-center font-medium"></div>
+        </div>
+
+        <!-- 當節紀錄明細卡片區塊 -->
+        <div id="currentSessionSection" class="bg-white rounded-xl shadow-md p-6 hidden">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 id="sessionTitle" class="font-bold text-slate-800 text-base">當節紀錄明細</h3>
+                <span id="sessionCount" class="text-sm font-semibold text-blue-600">0 筆</span>
+            </div>
+            <div id="sessionRecordsList" class="space-y-3">
+                <!-- 動態插入明細項目 -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ✉️ 通知導師 彈出視窗 (Modal) -->
+    <div id="notifyModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden">
+            <div class="bg-emerald-600 text-white px-5 py-3.5 flex justify-between items-center">
+                <div class="flex items-center gap-2 text-lg font-bold">
+                    <span>✉️</span>
+                    <span>課堂行為回報 (通知導師)</span>
+                </div>
+                <button type="button" onclick="closeNotifyModal()" class="text-white/80 hover:text-white text-2xl font-bold leading-none">&times;</button>
+            </div>
+            
+            <div class="p-5">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-sm font-semibold text-slate-600">課堂行為摘要：</span>
+                    <span id="modalTimestamp" class="text-sm font-bold text-blue-600"></span>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 font-mono text-sm text-slate-800 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto" id="notifySummaryText">
+                </div>
+
+                <div class="mt-4 flex gap-3">
+                    <button type="button" onclick="copyNotifyText()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg transition text-center">
+                        📋 複製回報內容
+                    </button>
+                    <button type="button" onclick="closeNotifyModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-2 px-4 rounded-lg transition">
+                        關閉
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ 請在這裡貼上你部署好的 Google Apps Script 網頁應用程式 URL
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwhTv-EnT2q2pjm90m8HARU5QpOnn_6FiN542dXKE5z-vqAcBtN_ehOcsPuUBqSn__V/exec";
+
+        let allStudents = [];
+        let currentSessionRecords = []; // 儲存當節已送出的紀錄
+        const weekDays = ["(日)", "(一)", "(二)", "(三)", "(四)", "(五)", "(六)"];
+
+        const dateInput = document.getElementById('date');
+        dateInput.valueAsDate = new Date();
+        updateDayOfWeek();
+
+        window.addEventListener('DOMContentLoaded', fetchStudents);
+
+        function updateDayOfWeek() {
+            const val = dateInput.value;
+            if (!val) return;
+            const d = new Date(val);
+            document.getElementById('dayOfWeekTag').textContent = weekDays[d.getDay()];
+        }
+
+        function getFormattedNow() {
+            const d = new Date();
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const dayStr = weekDays[d.getDay()];
+            const hh = String(d.getHours()).padStart(2, '0');
+            const min = String(d.getMinutes()).padStart(2, '0');
+            return `${yyyy}/${mm}/${dd} ${dayStr} ${hh}:${min}`;
+        }
+
+        function getShortTime() {
+            const d = new Date();
+            return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        }
+
+        // 開啟「通知導師」彈窗
+        function openNotifyModal() {
+            const className = document.getElementById('classSelect').value || "【未選擇班級】";
+            const period = document.getElementById('periodSelect').value || "未指定節次";
+            const nowStr = getFormattedNow();
+            document.getElementById('modalTimestamp').textContent = nowStr;
+
+            let recordsText = "";
+            if (currentSessionRecords.length === 0) {
+                recordsText = "（本節尚無特別登記紀錄）";
+            } else {
+                currentSessionRecords.forEach((item, index) => {
+                    recordsText += `${index + 1}. 學生：${item.student} | 行為：${item.title}\n`;
+                });
+            }
+
+            const summary = 
+`【${className} 課堂行為回報】
+📅 回報時間：${nowStr}
+⏱️ 課堂節次：${period}
+---------------------------------
+📌 當節紀錄明細 (${currentSessionRecords.length} 筆)：
+${recordsText.trim()}`;
+
+            document.getElementById('notifySummaryText').textContent = summary;
+            document.getElementById('notifyModal').classList.remove('hidden');
+            document.getElementById('notifyModal').classList.add('flex');
+        }
+
+        function closeNotifyModal() {
+            document.getElementById('notifyModal').classList.add('hidden');
+            document.getElementById('notifyModal').classList.remove('flex');
+        }
+
+        function copyNotifyText() {
+            const text = document.getElementById('notifySummaryText').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                showToast("✅ 回報內容已複製到剪貼簿！", "success");
+                closeNotifyModal();
+            }).catch(() => {
+                showToast("複製失敗，請手動選取文字複製", "error");
+            });
+        }
+
+        async function fetchStudents() {
+            showLoading(true);
+            try {
+                const response = await fetch(GAS_WEB_APP_URL);
+                const result = await response.json();
+                
+                if (result.status === "success") {
+                    allStudents = result.data;
+                    initClassSelect();
+                } else {
+                    showToast("載入學生名單失敗: " + result.message, "error");
+                }
+            } catch (error) {
+                showToast("連線伺服器失敗，請檢查網路或 API 網址", "error");
+                console.error(error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function initClassSelect() {
+            const classSet = [...new Set(allStudents.map(s => s.class))].filter(Boolean);
+            const classSelect = document.getElementById('classSelect');
+            
+            classSelect.innerHTML = '<option value="">請選擇班級</option>';
+            classSet.forEach(cls => {
+                const option = document.createElement('option');
+                option.value = cls;
+                option.textContent = cls;
+                classSelect.appendChild(option);
+            });
+        }
+
+        function onClassChange(selectedClass) {
+            const studentSelect = document.getElementById('studentSelect');
+            studentSelect.innerHTML = '<option value="">請選擇學生</option>';
+            
+            if (!selectedClass) {
+                studentSelect.disabled = true;
+                studentSelect.classList.add('bg-slate-100');
+                return;
+            }
+
+            const filteredStudents = allStudents.filter(s => s.class === selectedClass);
+            filteredStudents.forEach(s => {
+                const option = document.createElement('option');
+                option.value = `${String(s.seatNo).padStart(2, '0')} ${s.name}`;
+                option.textContent = `${String(s.seatNo).padStart(2, '0')} 號 - ${s.name}`;
+                studentSelect.appendChild(option);
+            });
+
+            studentSelect.disabled = false;
+            studentSelect.classList.remove('bg-slate-100');
+        }
+
+        function onClassOrPeriodChange() {
+            const cls = document.getElementById('classSelect').value;
+            onClassChange(cls);
+            updateSessionDisplay();
+        }
+
+        function handleTitleChange() {
+            const val = document.getElementById('titleSelect').value;
+            const customContainer = document.getElementById('customTitleContainer');
+            const isPositiveInput = document.getElementById('isPositive');
+
+            if (val.includes('自訂')) {
+                customContainer.classList.remove('hidden');
+                document.getElementById('customTitle').required = true;
+            } else {
+                customContainer.classList.add('hidden');
+                document.getElementById('customTitle').required = false;
+            }
+
+            if (val.includes('★') || val.includes('👍') || val.includes('正面表現')) {
+                isPositiveInput.value = 'True';
+            } else {
+                isPositiveInput.value = 'False';
+            }
+        }
+
+        // 更新下方明細清單畫面
+        function updateSessionDisplay() {
+            const cls = document.getElementById('classSelect').value;
+            const period = document.getElementById('periodSelect').value;
+            const section = document.getElementById('currentSessionSection');
+
+            if (!cls || !period) {
+                section.classList.add('hidden');
+                return;
+            }
+
+            section.classList.remove('hidden');
+            document.getElementById('sessionTitle').textContent = `當節紀錄明細 (${cls} ${period})`;
+            document.getElementById('sessionCount').textContent = `${currentSessionRecords.length} 筆`;
+
+            const listContainer = document.getElementById('sessionRecordsList');
+            listContainer.innerHTML = '';
+
+            if (currentSessionRecords.length === 0) {
+                listContainer.innerHTML = '<p class="text-sm text-slate-400 text-center py-2">目前尚無送出紀錄</p>';
+                return;
+            }
+
+            currentSessionRecords.forEach(item => {
+                // 判斷是否為正向行為以套用不同顏色標籤
+                const isPos = item.isPositive === 'True' || item.isPositive === true;
+                const badgeClass = isPos 
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                    : 'bg-rose-50 text-rose-700 border border-rose-200';
+
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center p-3 border border-slate-100 rounded-lg bg-slate-50/50 shadow-sm";
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-slate-700 text-sm">${item.student}</span>
+                        <span class="text-xs px-2.5 py-1 rounded-md font-medium ${badgeClass}">${item.title}</span>
+                    </div>
+                    <span class="text-xs text-slate-400 font-mono">${item.time}</span>
+                `;
+                listContainer.appendChild(div);
+            });
+        }
+
+        document.getElementById('recordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '傳送中...';
+
+            let titleVal = document.getElementById('titleSelect').value;
+            if (titleVal.includes('自訂')) {
+                const customVal = document.getElementById('customTitle').value;
+                titleVal = `[自訂] ${customVal}`;
+            }
+
+            const payload = {
+                date: document.getElementById('date').value,
+                className: document.getElementById('classSelect').value,
+                studentInfo: document.getElementById('studentSelect').value,
+                period: document.getElementById('periodSelect').value,
+                title: titleVal,
+                isPositive: document.getElementById('isPositive').value
+            };
+
+            try {
+                const response = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showToast('✅ 紀錄已成功送出！', 'success');
+                    
+                    // 新增至當節紀錄清單陣列中
+                    currentSessionRecords.push({
+                        student: payload.studentInfo,
+                        title: payload.title,
+                        isPositive: payload.isPositive,
+                        time: getShortTime()
+                    });
+                    updateSessionDisplay();
+
+                    // 重設學生與行為欄位，保留班級與節次方便連續登記
+                    document.getElementById('studentSelect').value = '';
+                    document.getElementById('titleSelect').value = '【無登記】';
+                    document.getElementById('customTitleContainer').classList.add('hidden');
+                } else {
+                    showToast('❌ 儲存失敗: ' + result.message, 'error');
+                }
+            } catch (error) {
+                showToast('❌ 網路錯誤或伺服器無回應', 'error');
+                console.error(error);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '送出記錄';
+            }
+        });
+
+        function showLoading(isLoading) {
+            const loading = document.getElementById('loading');
+            const form = document.getElementById('recordForm');
+            if (isLoading) {
+                loading.classList.remove('hidden');
+                form.classList.add('opacity-50');
+            } else {
+                loading.classList.add('hidden');
+                form.classList.remove('opacity-50');
+            }
+        }
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-800', 'bg-rose-100', 'text-rose-800');
+            
+            if (type === 'success') {
+                toast.classList.add('bg-emerald-100', 'text-emerald-800');
+            } else {
+                toast.classList.add('bg-rose-100', 'text-rose-800');
+            }
+
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
